@@ -2,6 +2,8 @@ package gobrief
 
 import "strings"
 
+// Dataset stores map with string keys and any values, providing
+// interface to fetch values by passing part of keys
 type Dataset struct {
 	dataset map[string]interface{}
 }
