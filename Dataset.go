@@ -1,5 +1,7 @@
 package gobrief
 
+import "strings"
+
 type Dataset struct {
 	dataset map[string]interface{}
 }
@@ -34,7 +36,33 @@ func (dataset *Dataset) Exists(key string) bool {
 	return exists
 }
 
-// Get values of all keys that have name started with provided argument
+// Get value of key if key name exactly matched
+// Will return nil if no matches were found
 func (dataset *Dataset) Get(key string) interface{} {
 	return dataset.dataset[key]
+}
+
+// GetStartedWith returns map of keys/values of all keys that have name started with provided argument
+// Will return empty map if no matches were found
+func (dataset *Dataset) GetStartedWith(key string) map[string]interface{} {
+	resultMap := make(map[string]interface{})
+	for dataKey, value := range dataset.dataset {
+		if strings.HasPrefix(dataKey, key) {
+			resultMap[dataKey] = value
+		}
+	}
+
+	return resultMap
+}
+
+// First returns first match of key that have name started with provided argument
+// Will return nil if no matches were found
+func (dataset *Dataset) First(key string) interface{} {
+	for dataKey, value := range dataset.dataset {
+		if strings.HasPrefix(dataKey, key) {
+			return value
+		}
+	}
+
+	return nil
 }

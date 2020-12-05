@@ -20,13 +20,87 @@ var addTestTable = []struct {
 }
 
 var getTestTable = []struct {
-	name          string
-	key           string
-	existingKeys  map[string]string
-	expectedValue interface{}
+	name           string
+	key            string
+	existingKeys   map[string]string
+	expectedResult interface{}
 }{
 	{"key not exists", "key", map[string]string{}, nil},
-	{"key exists", "key", map[string]string{"key": "value"}, "value"},
+	{"one key exists", "key", map[string]string{"key": "value"}, "value"},
+	{"multiple keys started with different letters exists. Must return one value",
+		"first key",
+		map[string]string{
+			"first key":  "first value",
+			"second key": "second value",
+		},
+		"first value",
+	},
+	{"multiple keys started with same letters exists. Must return one value of key with exact name",
+		"key",
+		map[string]string{
+			"key":        "first value",
+			"key second": "second value",
+			"third key":  "third value",
+		},
+		"first value",
+	},
+}
+
+var getStartedWithTestTable = []struct {
+	name           string
+	key            string
+	existingKeys   map[string]string
+	expectedResult map[string]interface{}
+}{
+	{"key not exists", "key", map[string]string{}, map[string]interface{}{}},
+	{"one key exists", "key", map[string]string{"key": "value"}, map[string]interface{}{"key": "value"}},
+	{"multiple keys started with different letters exists. Must return one key/value",
+		"first key",
+		map[string]string{
+			"first key":  "first value",
+			"second key": "second value",
+		},
+		map[string]interface{}{"first key": "first value"},
+	},
+	{"multiple keys started with same letters exists. Must return two keys/values",
+		"key",
+		map[string]string{
+			"key":        "first value",
+			"key second": "second value",
+			"third key":  "third value",
+		},
+		map[string]interface{}{
+			"key":        "first value",
+			"key second": "second value",
+		},
+	},
+}
+
+var getFirstTestTable = []struct {
+	name           string
+	key            string
+	existingKeys   map[string]string
+	expectedResult interface{}
+}{
+	{"key not exists", "key", map[string]string{}, nil},
+	{"one key exists", "key", map[string]string{"key": "value"}, "value"},
+	{"multiple keys started with different letters exists. Must return one value",
+		"first key",
+		map[string]string{
+			"first key":  "first value",
+			"second key": "second value",
+		},
+		"first value",
+	},
+	{"multiple keys started with same letters exists. Must return one value",
+		"key",
+		map[string]string{
+			"key first":  "first value",
+			"key second": "second value",
+			"third key":  "third value",
+		},
+		"first value",
+	},
 }
 
 func TestDataset(test *testing.T) {
@@ -51,6 +125,9 @@ func (suite *DatasetTestSuite) Test_Add_givenKeyAndDataset_keyMustBeAddedIfUniqu
 			assert.True(suite.T(), datum.Exists(expectedKey), err, fmt.Sprintf("Test case: \"%s\"", testCase.name))
 		}
 		assert.Equal(suite.T(), testCase.expectedError, err, fmt.Sprintf("Test case: \"%s\"", testCase.name))
+		if testCase.expectedError != nil {
+			assert.NotEmpty(suite.T(), err.Error(), fmt.Sprintf("Test case: \"%s\"", testCase.name))
+		}
 	}
 }
 
@@ -69,7 +146,7 @@ func (suite *DatasetTestSuite) Test_Set_givenKeyAndValue_keyMustBeSetInDataset()
 	assert.Equal(suite.T(), value, datum.Get(keyExisting))
 }
 
-func (suite *DatasetTestSuite) Test_Get_givenDataset_mustReturnIfKeyExists() {
+func (suite *DatasetTestSuite) Test_Get_givenDataset_mustReturnIfKeysExists() {
 	for _, testCase := range getTestTable {
 		datum := Dataset{}.Create()
 		for existingKey, existingValue := range testCase.existingKeys {
@@ -78,6 +155,32 @@ func (suite *DatasetTestSuite) Test_Get_givenDataset_mustReturnIfKeyExists() {
 
 		result := datum.Get(testCase.key)
 
-		assert.Equal(suite.T(), testCase.expectedValue, result, fmt.Sprintf("Test case: \"%s\"", testCase.name))
+		assert.Equal(suite.T(), testCase.expectedResult, result, fmt.Sprintf("Test case: \"%s\"", testCase.name))
+	}
+}
+
+func (suite *DatasetTestSuite) Test_GetStartedWith_givenDataset_mustReturnResultMap() {
+	for _, testCase := range getStartedWithTestTable {
+		datum := Dataset{}.Create()
+		for existingKey, existingValue := range testCase.existingKeys {
+			datum.Add(existingKey, existingValue)
+		}
+
+		result := datum.GetStartedWith(testCase.key)
+
+		assert.Equal(suite.T(), testCase.expectedResult, result, fmt.Sprintf("Test case: \"%s\"", testCase.name))
+	}
+}
+
+func (suite *DatasetTestSuite) Test_First_givenDataset_mustReturnResultMap() {
+	for _, testCase := range getFirstTestTable {
+		datum := Dataset{}.Create()
+		for existingKey, existingValue := range testCase.existingKeys {
+			datum.Add(existingKey, existingValue)
+		}
+
+		result := datum.First(testCase.key)
+
+		assert.Equal(suite.T(), testCase.expectedResult, result, fmt.Sprintf("Test case: \"%s\"", testCase.name))
 	}
 }
